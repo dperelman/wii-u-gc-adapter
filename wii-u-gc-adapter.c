@@ -424,10 +424,10 @@ static void *adapter_thread(void *data)
    {
       unsigned char payload[37];
       int size = 0;
-      libusb_interrupt_transfer(a->handle, EP_IN, payload, sizeof(payload), &size, 0);
+      libusb_interrupt_transfer(a->handle, EP_IN, payload, sizeof(payload), &size, 100);
       if (size != 37 || payload[0] != 0x21)
          continue;
-      
+
       unsigned char *controller = &payload[1];
 
       unsigned char rumble[5] = { 0x11, 0, 0, 0, 0 };
@@ -456,7 +456,7 @@ static void *adapter_thread(void *data)
       if (memcmp(rumble, a->rumble, sizeof(rumble)) != 0)
       {
          memcpy(a->rumble, rumble, sizeof(rumble));
-         libusb_interrupt_transfer(a->handle, EP_OUT, a->rumble, sizeof(a->rumble), &size, 0);
+         libusb_interrupt_transfer(a->handle, EP_OUT, a->rumble, sizeof(a->rumble), &size, 100);
       }
    }
 
@@ -491,9 +491,15 @@ static void add_adapter(struct libusb_device *dev)
       return;
    }
 
+   if (libusb_claim_interface(a->handle, 0) != 0)
+   {
+      fprintf(stderr, "Error claiming interface 0 on adapter 0x%p from kernel\n", a->handle);
+      return;
+   }
+
    int tmp;
    unsigned char payload[1] = { 0x13 };
-   libusb_interrupt_transfer(a->handle, EP_OUT, payload, sizeof(payload), &tmp, 0);
+   libusb_interrupt_transfer(a->handle, EP_OUT, payload, sizeof(payload), &tmp, 100);
 
    struct adapter *old_head = adapters.next;
    adapters.next = a;
@@ -512,6 +518,7 @@ static void remove_adapter(struct libusb_device *dev)
       if (a->next->device == dev)
       {
          a->next->quitting = true;
+         libusb_release_interface(a->next->handle, 0);
          pthread_join(a->next->thread, NULL);
          fprintf(stderr, "adapter 0x%p disconnected\n", a->next->device);
          libusb_close(a->next->handle);
