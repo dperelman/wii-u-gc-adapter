@@ -32,11 +32,17 @@
 #define STATE_WAVEBIRD 0x20
 
 #define MAX_FF_EVENTS 4
-/* #undef PAD_BTN */
+
+//#define PAD_BTN
+#define XBOX360_EMULATION
 
 const int BUTTON_OFFSET_VALUES[16] = {
    BTN_START,
+#ifdef XBOX360_EMULATION
+   BTN_B,
+#else
    BTN_Z,
+#endif
    BTN_TR,
    BTN_TL,
    -1,
@@ -44,9 +50,15 @@ const int BUTTON_OFFSET_VALUES[16] = {
    -1,
    -1,
    BTN_A,
+#ifdef XBOX360_EMULATION
+   BTN_X,
+   BTN_X,
+   BTN_Y,
+#else
    BTN_B,
    BTN_X,
    BTN_Y,
+#endif
    BTN_DPAD_LEFT,
    BTN_DPAD_RIGHT,
    BTN_DPAD_DOWN,
@@ -182,10 +194,14 @@ static bool uinput_create(int i, struct ports *port, unsigned char type)
    ioctl(port->uinput, UI_SET_FFBIT, FF_RUMBLE);
    uinput_dev.ff_effects_max = MAX_FF_EVENTS;
 
+#ifdef XBOX360_EMULATION
+   snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Microsoft X-Box 360 pad", i+1);
+#else
 #ifdef PAD_BTN
    snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Wii U GameCube AbsAdpt Port %d", i+1);
 #else
    snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Wii U GameCube HatAdpt Port %d", i+1);
+#endif
 #endif
    uinput_dev.name[sizeof(uinput_dev.name)-1] = 0;
    uinput_dev.id.bustype = BUS_USB;
