@@ -38,31 +38,21 @@
 
 const int BUTTON_OFFSET_VALUES[16] = {
    BTN_START,
-#ifdef XBOX360_EMULATION
-   BTN_B,
-#else
-   BTN_Z,
-#endif
    BTN_TR,
-   BTN_TL,
+   -1,
+   -1,
    -1,
    -1,
    -1,
    -1,
    BTN_A,
-#ifdef XBOX360_EMULATION
    BTN_X,
-   BTN_X,
-   BTN_Y,
-#else
    BTN_B,
-   BTN_X,
    BTN_Y,
-#endif
-   BTN_DPAD_LEFT,
-   BTN_DPAD_RIGHT,
-   BTN_DPAD_DOWN,
    BTN_DPAD_UP,
+   BTN_DPAD_DOWN,
+   BTN_DPAD_RIGHT,
+   BTN_DPAD_LEFT,
 };
 
 const int AXIS_OFFSET_VALUES[6] = {
@@ -70,8 +60,8 @@ const int AXIS_OFFSET_VALUES[6] = {
    ABS_Y,
    ABS_RX,
    ABS_RY,
-   ABS_THROTTLE,
-   ABS_RUDDER
+   ABS_Z,
+   ABS_RZ,
 };
 
 struct ff_event
@@ -141,52 +131,49 @@ static bool uinput_create(int i, struct ports *port, unsigned char type)
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_B);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_X);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_Y);
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_TL);
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_TR);
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_SELECT);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_START);
-#ifdef PAD_BTN
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_MODE);
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_THUMBL);
+   ioctl(port->uinput, UI_SET_KEYBIT, BTN_THUMBR);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_DPAD_UP);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_DPAD_DOWN);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_DPAD_LEFT);
    ioctl(port->uinput, UI_SET_KEYBIT, BTN_DPAD_RIGHT);
-#endif
-   ioctl(port->uinput, UI_SET_KEYBIT, BTN_TL);
-   ioctl(port->uinput, UI_SET_KEYBIT, BTN_TR);
-   ioctl(port->uinput, UI_SET_KEYBIT, BTN_Z);
 
    // axis
    ioctl(port->uinput, UI_SET_EVBIT, EV_ABS);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_X);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_Y);
+   ioctl(port->uinput, UI_SET_ABSBIT, ABS_Z);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_RX);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_RY);
-   ioctl(port->uinput, UI_SET_ABSBIT, ABS_THROTTLE);
-   ioctl(port->uinput, UI_SET_ABSBIT, ABS_RUDDER);
-#ifndef PAD_BTN
+   ioctl(port->uinput, UI_SET_ABSBIT, ABS_RZ);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_HAT0X);
    ioctl(port->uinput, UI_SET_ABSBIT, ABS_HAT0Y);
-#endif
 
    if (raw_mode)
    {
       uinput_dev.absmin[ABS_X]  = 0;  uinput_dev.absmax[ABS_X]  = 255;
       uinput_dev.absmin[ABS_Y]  = 0;  uinput_dev.absmax[ABS_Y]  = 255;
+      uinput_dev.absmin[ABS_Z]  = -255;  uinput_dev.absmax[ABS_Z]  = 255;
       uinput_dev.absmin[ABS_RX] = 0;  uinput_dev.absmax[ABS_RX] = 255;
       uinput_dev.absmin[ABS_RY] = 0;  uinput_dev.absmax[ABS_RY] = 255;
-      uinput_dev.absmin[ABS_THROTTLE]  = -255;  uinput_dev.absmax[ABS_THROTTLE]  = 255;
-      uinput_dev.absmin[ABS_RUDDER] = -255;  uinput_dev.absmax[ABS_RUDDER] = 255;
+      uinput_dev.absmin[ABS_RZ] = -255;  uinput_dev.absmax[ABS_RZ] = 255;
    }
    else
    {
       uinput_dev.absmin[ABS_X]  = 20; uinput_dev.absmax[ABS_X]  = 235;
       uinput_dev.absmin[ABS_Y]  = 20; uinput_dev.absmax[ABS_Y]  = 235;
-      uinput_dev.absmin[ABS_RX] = 30; uinput_dev.absmax[ABS_RX] = 225;
       uinput_dev.absmin[ABS_RY] = 30; uinput_dev.absmax[ABS_RY] = 225;
-      uinput_dev.absmin[ABS_THROTTLE]  = -225; uinput_dev.absmax[ABS_THROTTLE]  = 225; uinput_dev.absflat[ABS_THROTTLE] = 30;
-      uinput_dev.absmin[ABS_RUDDER] = -225; uinput_dev.absmax[ABS_RUDDER] = 225; uinput_dev.absflat[ABS_RUDDER] = 30;
+      uinput_dev.absmin[ABS_RX] = 30; uinput_dev.absmax[ABS_RX] = 225;
+      uinput_dev.absmin[ABS_Z]  = 0; uinput_dev.absmax[ABS_Z]  = 225; uinput_dev.absflat[ABS_Z] = 30;
+      uinput_dev.absmin[ABS_RZ] = 0; uinput_dev.absmax[ABS_RZ] = 225; uinput_dev.absflat[ABS_RZ] = 30;
    }
-#ifndef PAD_BTN
    uinput_dev.absmin[ABS_HAT0X]  = -1; uinput_dev.absmax[ABS_HAT0X]  = 1;
    uinput_dev.absmin[ABS_HAT0Y]  = -1; uinput_dev.absmax[ABS_HAT0Y]  = 1;
-#endif
 
    // rumble
    ioctl(port->uinput, UI_SET_EVBIT, EV_FF);
@@ -194,15 +181,7 @@ static bool uinput_create(int i, struct ports *port, unsigned char type)
    ioctl(port->uinput, UI_SET_FFBIT, FF_RUMBLE);
    uinput_dev.ff_effects_max = MAX_FF_EVENTS;
 
-#ifdef XBOX360_EMULATION
-   snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Microsoft X-Box 360 pad", i+1);
-#else
-#ifdef PAD_BTN
-   snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Wii U GameCube AbsAdpt Port %d", i+1);
-#else
-   snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Wii U GameCube HatAdpt Port %d", i+1);
-#endif
-#endif
+   snprintf(uinput_dev.name, sizeof(uinput_dev.name), "Microsoft X-Box 360 pad");
    uinput_dev.name[sizeof(uinput_dev.name)-1] = 0;
    uinput_dev.id.bustype = BUS_USB;
    if (write(port->uinput, &uinput_dev, sizeof(uinput_dev)) != sizeof(uinput_dev))
@@ -334,7 +313,7 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload, st
       port->type = type;
    }
 
-   struct input_event events[12+6+1]; // buttons + axis + syn event
+   struct input_event events[12+1+6+1]; // buttons + dpad + axis + syn event
    memset(&events, 0, sizeof(events));
    int e_count = 0;
 
@@ -350,29 +329,26 @@ static void handle_payload(int i, struct ports *port, unsigned char *payload, st
 
       if ((port->buttons & mask) != pressed)
       {
-#ifndef PAD_BTN
-	 switch (BUTTON_OFFSET_VALUES[j]) {
-	    case BTN_DPAD_RIGHT:
-	    case BTN_DPAD_LEFT:
-	    case BTN_DPAD_DOWN:
-	    case BTN_DPAD_UP:
-	       events[e_count].type = EV_ABS;
-	       events[e_count].code = (BUTTON_OFFSET_VALUES[j] == BTN_DPAD_UP || BUTTON_OFFSET_VALUES[j] == BTN_DPAD_DOWN)
-		  ? ABS_HAT0Y : ABS_HAT0X;
-	       events[e_count].value = (BUTTON_OFFSET_VALUES[j] == BTN_DPAD_UP || BUTTON_OFFSET_VALUES[j] == BTN_DPAD_LEFT)
-		  ? (pressed == 0) ? 0 : -1 : (pressed == 0) ? 0 : 1;
-	       break;
-	    default:
-#endif
+         switch (BUTTON_OFFSET_VALUES[j]) {
+            case BTN_DPAD_RIGHT:
+            case BTN_DPAD_LEFT:
+            case BTN_DPAD_DOWN:
+            case BTN_DPAD_UP:
+               events[e_count].type = EV_ABS;
+               events[e_count].code = (BUTTON_OFFSET_VALUES[j] == BTN_DPAD_UP || BUTTON_OFFSET_VALUES[j] == BTN_DPAD_DOWN)
+                  // axes are flipped for xbox compatibility
+                  ? ABS_HAT0X : ABS_HAT0Y;
+               events[e_count].value = (BUTTON_OFFSET_VALUES[j] == BTN_DPAD_UP || BUTTON_OFFSET_VALUES[j] == BTN_DPAD_LEFT)
+                  ? (pressed == 0) ? 0 : -1 : (pressed == 0) ? 0 : 1;
+               e_count++;
+               break;
+            default:
+               break;
+         }
 
-	       events[e_count].type = EV_KEY;
-	       events[e_count].code = BUTTON_OFFSET_VALUES[j];
-	       events[e_count].value = (pressed == 0) ? 0 : 1;
-
-#ifndef PAD_BTN
-	       break;
-	 }
-#endif
+         events[e_count].type = EV_KEY;
+         events[e_count].code = BUTTON_OFFSET_VALUES[j];
+         events[e_count].value = (pressed == 0) ? 0 : 1;
 
          e_count++;
          port->buttons &= ~mask;
